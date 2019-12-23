@@ -1,26 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../pages/product_details_screen.dart';
+import '../screens/product_detail_screen.dart';
+import '../providers/product.dart';
 import '../providers/cart.dart';
-import '../providers/products.dart';
 
 class ProductItem extends StatelessWidget {
+  // final String id;
+  // final String title;
+  // final String imageUrl;
+
+  // ProductItem(this.id, this.title, this.imageUrl);
+
   @override
   Widget build(BuildContext context) {
-    final prod = Provider.of<Product>(context, listen: false);
+    final product = Provider.of<Product>(context, listen: false);
     final cart = Provider.of<Cart>(context, listen: false);
-
     return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(10),
       child: GridTile(
         child: GestureDetector(
           onTap: () {
-            Navigator.of(context)
-                .pushNamed(ProductDetailsScreen.routeName, arguments: prod.id);
+            Navigator.of(context).pushNamed(
+              ProductDetailScreen.routeName,
+              arguments: product.id,
+            );
           },
           child: Image.network(
-            prod.imgUrl,
+            product.imageUrl,
             fit: BoxFit.cover,
           ),
         ),
@@ -28,33 +35,43 @@ class ProductItem extends StatelessWidget {
           backgroundColor: Colors.black87,
           leading: Consumer<Product>(
             builder: (ctx, product, _) => IconButton(
-                icon: Icon(
-                    prod.isFavourite ? Icons.favorite : Icons.favorite_border),
-                color: Theme.of(context).accentColor,
-                onPressed: () {
-                  prod.toggleFavouriteStatus();
-                }),
+                  icon: Icon(
+                    product.isFavorite ? Icons.favorite : Icons.favorite_border,
+                  ),
+                  color: Theme.of(context).accentColor,
+                  onPressed: () {
+                    product.toggleFavoriteStatus();
+                  },
+                ),
           ),
           title: Text(
-            prod.title,
+            product.title,
             textAlign: TextAlign.center,
           ),
           trailing: IconButton(
-              icon: Icon(Icons.shopping_cart),
-              color: Theme.of(context).accentColor,
-              onPressed: () {
-                cart.addItem(prod.id, prod.price, prod.title);
-                Scaffold.of(context).hideCurrentSnackBar();
-                Scaffold.of(context).showSnackBar(SnackBar(
-                  content: Text('Added item to cart!'),
-                  duration: Duration(seconds: 1),
+            icon: Icon(
+              Icons.shopping_cart,
+            ),
+            onPressed: () {
+              cart.addItem(product.id, product.price, product.title);
+              Scaffold.of(context).hideCurrentSnackBar();
+              Scaffold.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Added item to cart!',
+                  ),
+                  duration: Duration(seconds: 2),
                   action: SnackBarAction(
-                      label: 'Undo',
-                      onPressed: () {
-                        cart.removeSingleItem(prod.id);
-                      }),
-                ));
-              }),
+                    label: 'UNDO',
+                    onPressed: () {
+                      cart.removeSingleItem(product.id);
+                    },
+                  ),
+                ),
+              );
+            },
+            color: Theme.of(context).accentColor,
+          ),
         ),
       ),
     );
