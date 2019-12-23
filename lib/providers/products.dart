@@ -40,12 +40,8 @@ class Products with ChangeNotifier {
           'https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Cast-Iron-Pan.jpg/1024px-Cast-Iron-Pan.jpg',
     ),
   ];
-  // var _showFavoritesOnly = false;
 
   List<Product> get items {
-    // if (_showFavoritesOnly) {
-    //   return _items.where((prodItem) => prodItem.isFavorite).toList();
-    // }
     return [..._items];
   }
 
@@ -57,30 +53,42 @@ class Products with ChangeNotifier {
     return _items.firstWhere((prod) => prod.id == id);
   }
 
-  // void showFavoritesOnly() {
-  //   _showFavoritesOnly = true;
-  //   notifyListeners();
-  // }
+  Future<void> fetchAndSetProducts() async {
 
-  // void showAll() {
-  //   _showFavoritesOnly = false;
-  //   notifyListeners();
-  // }
+    const url = 'https://flutter-shop-app-57f66.firebaseio.com/products.json';
 
-  Future<void> addProduct(Product product) {
-    const url = 'https://flutter-update.firebaseio.com/products.json';
-    return http
-        .post(
-      url,
-      body: json.encode({
-        'title': product.title,
-        'description': product.description,
-        'imageUrl': product.imageUrl,
-        'price': product.price,
-        'isFavorite': product.isFavorite,
-      }),
-    )
-        .then((response) {
+    try {
+      final response = await http.get(url);
+      final extractedData = json.decode(response.body) as Map<String, dynamic>;
+      final List<Product> loadedProducts = [];
+      extractedData.forEach((prodId, prodData) {
+        print('$prodId $prodData \n');
+        loadedProducts.add(Product(
+            id: prodId,
+            isFavorite: prodData['isFavorite'],
+            title: prodData['title'],
+            description: prodData['description'],
+            price: prodData['price'],
+            imageUrl: 'imgUrl'));
+      });
+      _items = loadedProducts;
+      notifyListeners();
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  Future<void> addProduct(Product product) async {
+    const url = 'https://flutter-shop-app-57f66.firebaseio.com//products.json';
+    try {
+      final response = await http.post(url,
+          body: json.encode({
+            'title': product.title,
+            'description': product.description,
+            'imageUrl': product.imageUrl,
+            'price': product.price,
+            'isFavorite': product.isFavorite,
+          }));
       final newProduct = Product(
         title: product.title,
         description: product.description,
@@ -88,13 +96,13 @@ class Products with ChangeNotifier {
         imageUrl: product.imageUrl,
         id: json.decode(response.body)['name'],
       );
+
       _items.add(newProduct);
-      // _items.insert(0, newProduct); // at the start of the list
       notifyListeners();
-    }).catchError((error) {
-      print(error);
-      throw error;
-    });
+    } on Exception catch (e) {
+      print(e);
+      throw e;
+    }
   }
 
   void updateProduct(String id, Product newProduct) {
