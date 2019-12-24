@@ -21,10 +21,12 @@ class ProductsOverviewScreen extends StatefulWidget {
 class _ProductsOverviewScreenState extends State<ProductsOverviewScreen> {
   var _showOnlyFavorites = false;
   var _isLoading = false;
+  var _isInit = true;
 
   @override
-  void initState() {
-    Future.delayed(Duration.zero).then((_) {
+  void didChangeDependencies() {
+    if (_isInit) {
+      _isInit = false;
       setState(() {
         _isLoading = true;
       });
@@ -33,9 +35,9 @@ class _ProductsOverviewScreenState extends State<ProductsOverviewScreen> {
           _isLoading = false;
         });
       });
-    });
+    }
 
-    super.initState();
+    super.didChangeDependencies();
   }
 
   @override

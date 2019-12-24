@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 class CartItem {
   final String id;
@@ -33,32 +36,64 @@ class Cart with ChangeNotifier {
     return total;
   }
 
-  void addItem(
+  Future<void> fetchCarts() async {
+    const url = 'https://flutter-shop-app-57f66.firebaseio.com//carts.json';
+    final response = await http.get(url);
+    final extractedData = json.decode(response.body) as Map<String, dynamic>;
+
+  }
+
+  Future<void> addItem(
     String productId,
     double price,
     String title,
-  ) {
+  ) async {
     if (_items.containsKey(productId)) {
       // change quantity...
+      CartItem existingCart = _items[productId];
+      final url =
+          'https://flutter-shop-app-57f66.firebaseio.com//carts/${existingCart.id}.json';
+
+      print(existingCart);
       _items.update(
         productId,
         (existingCartItem) => CartItem(
-              id: existingCartItem.id,
-              title: existingCartItem.title,
-              price: existingCartItem.price,
-              quantity: existingCartItem.quantity + 1,
-            ),
+          id: existingCartItem.id,
+          title: existingCartItem.title,
+          price: existingCartItem.price,
+          quantity: existingCartItem.quantity + 1,
+        ),
       );
+
+      await http.patch(url,
+          body: json.encode({
+            'quantity': existingCart.quantity + 1,
+          }));
     } else {
-      _items.putIfAbsent(
-        productId,
-        () => CartItem(
-              id: DateTime.now().toString(),
-              title: title,
-              price: price,
-              quantity: 1,
-            ),
-      );
+      const url = 'https://flutter-shop-app-57f66.firebaseio.com//carts.json';
+      try {
+        final response = await http.post(url,
+            body: json.encode({
+              'title': title,
+              'productId': productId,
+              'price': price,
+            }));
+
+        _items.putIfAbsent(
+          productId,
+          () => CartItem(
+            id: json.decode(response.body)['name'],
+            title: title,
+            price: price,
+            quantity: 1,
+          ),
+        );
+
+        notifyListeners();
+      } on Exception catch (e) {
+        print(e);
+        throw e;
+      }
     }
     notifyListeners();
   }
@@ -88,6 +123,9 @@ class Cart with ChangeNotifier {
   }
 
   void clear() {
+
+    const url = 'https://flutter-shop-app-57f66.firebaseio.com//carts.json';
+    http.delete(url);
     _items = {};
     notifyListeners();
   }
